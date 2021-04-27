@@ -152,7 +152,13 @@ class CustomDataset(Dataset):
                 img_infos.append(img_info)
 
         print_log(f'Loaded {len(img_infos)} images', logger=get_root_logger())
-        return img_infos
+        def sort_by_filename(infos):
+            name_ind_dict = {infos[i]['filename']:i for i in range(len(infos))}
+            names = list(name_ind_dict.keys())
+            names.sort()
+            sorted_infos = [infos[name_ind_dict[k]] for k in names]
+            return sorted_infos
+        return sort_by_filename(img_infos)
 
     def get_ann_info(self, idx):
         """Get annotation by index.

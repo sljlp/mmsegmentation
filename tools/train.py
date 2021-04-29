@@ -54,10 +54,6 @@ def parse_args():
         help='job launcher')
     parser.add_argument('--local_rank', type=int, default=0)
 
-    parser.add_argument('--iters', type=int, default=None, help='max iters')
-    parser.add_argument('--log_interval', type=int , default=None, help='print log interval')
-    parser.add_argument('--eval_interval', type=int, default=None, help='eval and saving interval')
-
     args = parser.parse_args()
     if 'LOCAL_RANK' not in os.environ:
         os.environ['LOCAL_RANK'] = str(args.local_rank)

@@ -53,30 +53,14 @@ def parse_args():
         default='none',
         help='job launcher')
     parser.add_argument('--local_rank', type=int, default=0)
-
     args = parser.parse_args()
     if 'LOCAL_RANK' not in os.environ:
         os.environ['LOCAL_RANK'] = str(args.local_rank)
-
     return args
-    
 def main():
     args = parse_args()
 
     cfg = Config.fromfile(args.config)
-
-
-    if args.iters is not None:
-        cfg['runner']['max_iters'] = args.iters
-    if args.log_interval is not None:
-        cfg['log_config']['interval'] = args.log_interval
-
-    if args.eval_interval is not None:
-        '''checkpoint_config = dict(by_epoch=False, interval=200)
-        evaluation = dict(interval=200, metric='mIoU')'''
-        cfg['checkpoint_config']['interval'] = args.eval_interval
-        cfg['evaluation']['interval'] = args.eval_interval
-
     if args.options is not None:
         cfg.merge_from_dict(args.options)
     # set cudnn_benchmark

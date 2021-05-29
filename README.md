@@ -11,9 +11,7 @@
 [![issue resolution](https://isitmaintained.com/badge/resolution/open-mmlab/mmsegmentation.svg)](https://github.com/open-mmlab/mmsegmentation/issues)
 [![open issues](https://isitmaintained.com/badge/open/open-mmlab/mmsegmentation.svg)](https://github.com/open-mmlab/mmsegmentation/issues)
 
-Documentation: https://mmsegmentation.readthedocs.io/
 
-English | [简体中文](README_zh-CN.md)
 
 ## Introduction
 

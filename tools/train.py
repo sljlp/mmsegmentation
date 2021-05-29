@@ -115,10 +115,6 @@ def main():
     if args.fp16:
         '''optimizer_config = dict(type='Fp16OptimizerHook', loss_scale=512.0)'''
         cfg['optimizer_config'] = dict(type="Fp16OptimizerHook", loss_scale=512.0)
-    if len(os.environ['CUDA_VISIBLE_DEVICES'].split(',')) == 1:
-        cfg['norm_cfg']['type'] = 'BN'
-    else:
-        cfg['norm_cfg']['type'] = 'SyncBN'
     # init distributed env first, since logger depends on the dist info.
     if args.launcher == 'none':
         distributed = False

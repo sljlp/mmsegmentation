@@ -53,9 +53,19 @@ def parse_args():
         default='none',
         help='job launcher')
     parser.add_argument('--local_rank', type=int, default=0)
+
+    parser.add_argument("--log_iters", type=int, default=None)
+    parser.add_argument("--max_iters", type=int, default=None)
+    parser.add_argument("--batch_size", type=int, default=None)
+    parser.add_argument("--num_workers" ,type=int, default=None)
+
+    parser.add_argument("--fp16", action='store_true', default=False)
+
     args = parser.parse_args()
     if 'LOCAL_RANK' not in os.environ:
         os.environ['LOCAL_RANK'] = str(args.local_rank)
+
+    
 
     return args
 
@@ -87,6 +97,28 @@ def main():
     else:
         cfg.gpu_ids = range(1) if args.gpus is None else range(args.gpus)
 
+
+    # parser.add_argument("--log_iters", type=int, default=None)
+    # parser.add_argument("--max_iters", type=int, default=None)
+    # parser.add_argument("--batch_size", type=int, default=None)
+    # parser.add_argument("--num_workers" ,type=int, default=None)
+
+    if args.log_iters is not None:
+        cfg['log_config']['interval'] = args.log_iters
+    if args.max_iters is not None:
+        '''runner = dict(type='IterBasedRunner', max_iters=80000)'''
+        cfg['runner']['max_iters'] = args.max_iters
+    if args.batch_size is not None:
+        cfg['data']['samples_per_gpu'] = args.batch_size
+    if args.num_workers is not None:
+        cfg['data']['workers_per_gpu'] = args.num_workers
+    if args.fp16:
+        '''optimizer_config = dict(type='Fp16OptimizerHook', loss_scale=512.0)'''
+        cfg['optimizer_config'] = dict(type="Fp16OptimizerHook", loss_scale=512.0)
+    if len(os.environ['CUDA_VISIBLE_DEVICES'].split(',')) == 1:
+        cfg['norm_cfg']['type'] = 'BN'
+    else:
+        cfg['norm_cfg']['type'] = 'SyncBN'
     # init distributed env first, since logger depends on the dist info.
     if args.launcher == 'none':
         distributed = False

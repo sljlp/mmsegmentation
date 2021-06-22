@@ -48,7 +48,7 @@ This project is released under the [Apache 2.0 license](LICENSE).
 
 ## Changelog
 
-v0.12.0 was released in 04/03/2021.
+v0.14.1 was released in 06/16/2021.
 Please refer to [changelog.md](docs/changelog.md) for details and release history.
 
 ## Benchmark and model zoo
@@ -69,7 +69,7 @@ Supported methods:
 - [x] [FCN (CVPR'2015/TPAMI'2017)](configs/fcn)
 - [x] [UNet (MICCAI'2016/Nat. Methods'2019)](configs/unet)
 - [x] [PSPNet (CVPR'2017)](configs/pspnet)
-- [x] [DeepLabV3 (CVPR'2017)](configs/deeplabv3)
+- [x] [DeepLabV3 (ArXiv'2017)](configs/deeplabv3)
 - [x] [Mixed Precision (FP16) Training (ArXiv'2017)](configs/fp16/README.md)
 - [x] [PSANet (ECCV'2018)](configs/psanet)
 - [x] [DeepLabV3+ (CVPR'2018)](configs/deeplabv3plus)
@@ -92,7 +92,7 @@ Supported methods:
 
 ## Installation
 
-Please refer to [get_started.md](docs/get_started.md#installation) for installation and dataset preparation.
+Please refer to [get_started.md](docs/get_started.md#installation) for installation and [dataset_prepare.md](docs/dataset_prepare.md#prepare-datasets) for dataset preparation.
 
 ## Get Started
 

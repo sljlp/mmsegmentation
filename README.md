@@ -17,6 +17,8 @@ English | [简体中文](README_zh-CN.md)
 
 ## Introduction
 
+dependency: mmcv-full==1.3.6
+
 MMSegmentation is an open source semantic segmentation toolbox based on PyTorch.
 It is a part of the OpenMMLab project.
 

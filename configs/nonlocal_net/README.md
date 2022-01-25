@@ -4,6 +4,24 @@
 
 <!-- [ALGORITHM] -->
 
+<a href="https://github.com/facebookresearch/video-nonlocal-net">Official Repo</a>
+
+<a href="https://github.com/open-mmlab/mmsegmentation/blob/v0.17.0/mmseg/models/decode_heads/nl_head.py#L10">Code Snippet</a>
+
+## Abstract
+
+<!-- [ABSTRACT] -->
+
+Both convolutional and recurrent operations are building blocks that process one local neighborhood at a time. In this paper, we present non-local operations as a generic family of building blocks for capturing long-range dependencies. Inspired by the classical non-local means method in computer vision, our non-local operation computes the response at a position as a weighted sum of the features at all positions. This building block can be plugged into many computer vision architectures. On the task of video classification, even without any bells and whistles, our non-local models can compete or outperform current competition winners on both Kinetics and Charades datasets. In static image recognition, our non-local models improve object detection/segmentation and pose estimation on the COCO suite of tasks. Code is available at [this https URL](https://github.com/facebookresearch/video-nonlocal-net).
+
+<!-- [IMAGE] -->
+<div align=center>
+<img src="https://user-images.githubusercontent.com/24582831/142902128-17e29678-bf12-4ff4-b3d6-a39b47dfd253.png" width="50%"/>
+</div>
+
+<details>
+<summary align="right"><a href="https://arxiv.org/abs/1711.07971">NonLocal Net (CVPR'2018)</a></summary>
+
 ```latex
 @inproceedings{wang2018non,
   title={Non-local neural networks},
@@ -13,6 +31,8 @@
   year={2018}
 }
 ```
+
+</details>
 
 ## Results and models
 
@@ -36,7 +56,7 @@
 | NonLocal | R-50-D8  | 512x512   |   80000 | 9.1      | 21.37          | 40.75 |         42.05 | [config](https://github.com/open-mmlab/mmsegmentation/blob/master/configs/nonlocal_net/nonlocal_r50-d8_512x512_80k_ade20k.py)   | [model](https://download.openmmlab.com/mmsegmentation/v0.5/nonlocal_net/nonlocal_r50-d8_512x512_80k_ade20k/nonlocal_r50-d8_512x512_80k_ade20k_20200615_015801-5ae0aa33.pth) &#124; [log](https://download.openmmlab.com/mmsegmentation/v0.5/nonlocal_net/nonlocal_r50-d8_512x512_80k_ade20k/nonlocal_r50-d8_512x512_80k_ade20k_20200615_015801.log.json)         |
 | NonLocal | R-101-D8 | 512x512   |   80000 | 12.6     | 13.97          | 42.90 |         44.27 | [config](https://github.com/open-mmlab/mmsegmentation/blob/master/configs/nonlocal_net/nonlocal_r101-d8_512x512_80k_ade20k.py)  | [model](https://download.openmmlab.com/mmsegmentation/v0.5/nonlocal_net/nonlocal_r101-d8_512x512_80k_ade20k/nonlocal_r101-d8_512x512_80k_ade20k_20200615_015758-24105919.pth) &#124; [log](https://download.openmmlab.com/mmsegmentation/v0.5/nonlocal_net/nonlocal_r101-d8_512x512_80k_ade20k/nonlocal_r101-d8_512x512_80k_ade20k_20200615_015758.log.json)     |
 | NonLocal | R-50-D8  | 512x512   |  160000 | -        | -              | 42.03 |         43.04 | [config](https://github.com/open-mmlab/mmsegmentation/blob/master/configs/nonlocal_net/nonlocal_r50-d8_512x512_160k_ade20k.py)  | [model](https://download.openmmlab.com/mmsegmentation/v0.5/nonlocal_net/nonlocal_r50-d8_512x512_160k_ade20k/nonlocal_r50-d8_512x512_160k_ade20k_20200616_005410-baef45e3.pth) &#124; [log](https://download.openmmlab.com/mmsegmentation/v0.5/nonlocal_net/nonlocal_r50-d8_512x512_160k_ade20k/nonlocal_r50-d8_512x512_160k_ade20k_20200616_005410.log.json)     |
-| NonLocal | R-101-D8 | 512x512   |  160000 | -        | -              | 43.36 |         44.83 | [config](https://github.com/open-mmlab/mmsegmentation/blob/master/configs/nonlocal_net/nonlocal_r101-d8_512x512_160k_ade20k.py) | [model](https://download.openmmlab.com/mmsegmentation/v0.5/nonlocal_net/nonlocal_r101-d8_512x512_160k_ade20k/nonlocal_r101-d8_512x512_160k_ade20k_20200616_003422-affd0f8d.pth) &#124; [log](https://download.openmmlab.com/mmsegmentation/v0.5/nonlocal_net/nonlocal_r101-d8_512x512_160k_ade20k/nonlocal_r101-d8_512x512_160k_ade20k_20200616_003422.log.json) |
+| NonLocal | R-101-D8 | 512x512   |  160000 | -        | -              | 44.63 |         45.79 | [config](https://github.com/open-mmlab/mmsegmentation/blob/master/configs/nonlocal_net/nonlocal_r101-d8_512x512_160k_ade20k.py) | [model](https://download.openmmlab.com/mmsegmentation/v0.5/nonlocal_net/nonlocal_r101-d8_512x512_160k_ade20k/nonlocal_r101-d8_512x512_160k_ade20k_20210827_221502-7881aa1a.pth) &#124; [log](https://download.openmmlab.com/mmsegmentation/v0.5/nonlocal_net/nonlocal_r101-d8_512x512_160k_ade20k/nonlocal_r101-d8_512x512_160k_ade20k_20210827_221502.log.json) |
 
 ### Pascal VOC 2012 + Aug
 

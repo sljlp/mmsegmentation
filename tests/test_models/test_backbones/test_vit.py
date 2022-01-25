@@ -1,3 +1,4 @@
+# Copyright (c) OpenMMLab. All rights reserved.
 import pytest
 import torch
 
@@ -24,12 +25,6 @@ def test_vit_backbone():
         x = torch.randn(1, 196)
         VisionTransformer.resize_pos_embed(x, 512, 512, 224, 224, 'bilinear')
 
-    with pytest.raises(RuntimeError):
-        # forward inputs must be [N, C, H, W]
-        x = torch.randn(3, 30, 30)
-        model = VisionTransformer()
-        model(x)
-
     with pytest.raises(AssertionError):
         # The length of img_size tuple must be lower than 3.
         VisionTransformer(img_size=(224, 224, 224))
@@ -39,8 +34,8 @@ def test_vit_backbone():
         VisionTransformer(pretrained=123)
 
     with pytest.raises(AssertionError):
-        # out_shape must be 'NLC' or 'NCHW;'
-        VisionTransformer(out_shape='NCL')
+        # with_cls_token must be True when output_cls_token == True
+        VisionTransformer(with_cls_token=False, output_cls_token=True)
 
     # Test img_size isinstance tuple
     imgs = torch.randn(1, 3, 224, 224)
@@ -88,6 +83,11 @@ def test_vit_backbone():
     feat = model(imgs)
     assert feat[-1].shape == (1, 768, 7, 14)
 
+    # Test irregular input image
+    imgs = torch.randn(1, 3, 234, 345)
+    feat = model(imgs)
+    assert feat[-1].shape == (1, 768, 15, 22)
+
     # Test with_cp=True
     model = VisionTransformer(with_cp=True)
     imgs = torch.randn(1, 3, 224, 224)
@@ -100,12 +100,6 @@ def test_vit_backbone():
     feat = model(imgs)
     assert feat[-1].shape == (1, 768, 14, 14)
 
-    # Test out_shape == 'NLC'
-    model = VisionTransformer(out_shape='NLC')
-    imgs = torch.randn(1, 3, 224, 224)
-    feat = model(imgs)
-    assert feat[-1].shape == (1, 196, 768)
-
     # Test final norm
     model = VisionTransformer(final_norm=True)
     imgs = torch.randn(1, 3, 224, 224)
@@ -117,3 +111,66 @@ def test_vit_backbone():
     imgs = torch.randn(1, 3, 224, 224)
     feat = model(imgs)
     assert feat[-1].shape == (1, 768, 14, 14)
+
+    # Test output_cls_token
+    model = VisionTransformer(with_cls_token=True, output_cls_token=True)
+    imgs = torch.randn(1, 3, 224, 224)
+    feat = model(imgs)
+    assert feat[0][0].shape == (1, 768, 14, 14)
+    assert feat[0][1].shape == (1, 768)
+
+
+def test_vit_init():
+    path = 'PATH_THAT_DO_NOT_EXIST'
+    # Test all combinations of pretrained and init_cfg
+    # pretrained=None, init_cfg=None
+    model = VisionTransformer(pretrained=None, init_cfg=None)
+    assert model.init_cfg is None
+    model.init_weights()
+
+    # pretrained=None
+    # init_cfg loads pretrain from an non-existent file
+    model = VisionTransformer(
+        pretrained=None, init_cfg=dict(type='Pretrained', checkpoint=path))
+    assert model.init_cfg == dict(type='Pretrained', checkpoint=path)
+    # Test loading a checkpoint from an non-existent file
+    with pytest.raises(OSError):
+        model.init_weights()
+
+    # pretrained=None
+    # init_cfg=123, whose type is unsupported
+    model = VisionTransformer(pretrained=None, init_cfg=123)
+    with pytest.raises(TypeError):
+        model.init_weights()
+
+    # pretrained loads pretrain from an non-existent file
+    # init_cfg=None
+    model = VisionTransformer(pretrained=path, init_cfg=None)
+    assert model.init_cfg == dict(type='Pretrained', checkpoint=path)
+    # Test loading a checkpoint from an non-existent file
+    with pytest.raises(OSError):
+        model.init_weights()
+
+    # pretrained loads pretrain from an non-existent file
+    # init_cfg loads pretrain from an non-existent file
+    with pytest.raises(AssertionError):
+        model = VisionTransformer(
+            pretrained=path, init_cfg=dict(type='Pretrained', checkpoint=path))
+    with pytest.raises(AssertionError):
+        model = VisionTransformer(pretrained=path, init_cfg=123)
+
+    # pretrain=123, whose type is unsupported
+    # init_cfg=None
+    with pytest.raises(TypeError):
+        model = VisionTransformer(pretrained=123, init_cfg=None)
+
+    # pretrain=123, whose type is unsupported
+    # init_cfg loads pretrain from an non-existent file
+    with pytest.raises(AssertionError):
+        model = VisionTransformer(
+            pretrained=123, init_cfg=dict(type='Pretrained', checkpoint=path))
+
+    # pretrain=123, whose type is unsupported
+    # init_cfg=123, whose type is unsupported
+    with pytest.raises(AssertionError):
+        model = VisionTransformer(pretrained=123, init_cfg=123)

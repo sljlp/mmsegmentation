@@ -1,7 +1,8 @@
+# Copyright (c) OpenMMLab. All rights reserved.
 import torch.nn as nn
-import torch.nn.functional as F
-from mmcv.cnn import ConvModule
+from mmcv.cnn import ConvModule, xavier_init
 
+from mmseg.ops import resize
 from ..builder import NECKS
 
 
@@ -10,10 +11,12 @@ class MultiLevelNeck(nn.Module):
     """MultiLevelNeck.
 
     A neck structure connect vit backbone and decoder_heads.
+
     Args:
         in_channels (List[int]): Number of input channels per scale.
         out_channels (int): Number of output channels (used at each scale).
-        scales (List[int]): Scale factors for each input feature map.
+        scales (List[float]): Scale factors for each input feature map.
+            Default: [0.5, 1, 2, 4]
         norm_cfg (dict): Config dict for normalization layer. Default: None.
         act_cfg (dict): Config dict for activation layer in ConvModule.
             Default: None.
@@ -52,6 +55,12 @@ class MultiLevelNeck(nn.Module):
                     norm_cfg=norm_cfg,
                     act_cfg=act_cfg))
 
+    # default init_weights for conv(msra) and norm in ConvModule
+    def init_weights(self):
+        for m in self.modules():
+            if isinstance(m, nn.Conv2d):
+                xavier_init(m, distribution='uniform')
+
     def forward(self, inputs):
         assert len(inputs) == len(self.in_channels)
         inputs = [
@@ -63,7 +72,7 @@ class MultiLevelNeck(nn.Module):
             inputs = [inputs[0] for _ in range(self.num_outs)]
         outs = []
         for i in range(self.num_outs):
-            x_resize = F.interpolate(
+            x_resize = resize(
                 inputs[i], scale_factor=self.scales[i], mode='bilinear')
             outs.append(self.convs[i](x_resize))
         return tuple(outs)

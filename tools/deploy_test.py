@@ -1,6 +1,8 @@
+# Copyright (c) OpenMMLab. All rights reserved.
 import argparse
 import os
 import os.path as osp
+import shutil
 import warnings
 from typing import Any, Iterable
 
@@ -14,6 +16,7 @@ from mmcv.utils import DictAction
 from mmseg.apis import single_gpu_test
 from mmseg.datasets import build_dataloader, build_dataset
 from mmseg.models.segmentors.base import BaseSegmentor
+from mmseg.ops import resize
 
 
 class ONNXRuntimeSegmentor(BaseSegmentor):
@@ -52,6 +55,7 @@ class ONNXRuntimeSegmentor(BaseSegmentor):
             self.io_binding.bind_output(name)
         self.cfg = cfg
         self.test_mode = cfg.model.test_cfg.mode
+        self.is_cuda_available = is_cuda_available
 
     def extract_feat(self, imgs):
         raise NotImplementedError('This method is not implemented.')
@@ -64,6 +68,10 @@ class ONNXRuntimeSegmentor(BaseSegmentor):
 
     def simple_test(self, img: torch.Tensor, img_meta: Iterable,
                     **kwargs) -> list:
+        if not self.is_cuda_available:
+            img = img.detach().cpu()
+        elif self.device_id >= 0:
+            img = img.cuda(self.device_id)
         device_type = img.device.type
         self.io_binding.bind_input(
             name='input',
@@ -79,7 +87,7 @@ class ONNXRuntimeSegmentor(BaseSegmentor):
         if not (ori_shape[0] == seg_pred.shape[-2]
                 and ori_shape[1] == seg_pred.shape[-1]):
             seg_pred = torch.from_numpy(seg_pred).float()
-            seg_pred = torch.nn.functional.interpolate(
+            seg_pred = resize(
                 seg_pred, size=tuple(ori_shape[:2]), mode='nearest')
             seg_pred = seg_pred.long().detach().cpu().numpy()
         seg_pred = seg_pred[0]
@@ -127,7 +135,7 @@ class TensorRTSegmentor(BaseSegmentor):
         if not (ori_shape[0] == seg_pred.shape[-2]
                 and ori_shape[1] == seg_pred.shape[-1]):
             seg_pred = torch.from_numpy(seg_pred).float()
-            seg_pred = torch.nn.functional.interpolate(
+            seg_pred = resize(
                 seg_pred, size=tuple(ori_shape[:2]), mode='nearest')
             seg_pred = seg_pred.long().detach().cpu().numpy()
         seg_pred = seg_pred[0]
@@ -164,7 +172,26 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         '--show-dir', help='directory where painted images will be saved')
     parser.add_argument(
-        '--options', nargs='+', action=DictAction, help='custom options')
+        '--options',
+        nargs='+',
+        action=DictAction,
+        help="--options is deprecated in favor of --cfg_options' and it will "
+        'not be supported in version v0.22.0. Override some settings in the '
+        'used config, the key-value pair in xxx=yyy format will be merged '
+        'into config file. If the value to be overwritten is a list, it '
+        'should be like key="[a,b]" or key=a,b It also allows nested '
+        'list/tuple values, e.g. key="[(a,b),(c,d)]" Note that the quotation '
+        'marks are necessary and that no white space is allowed.')
+    parser.add_argument(
+        '--cfg-options',
+        nargs='+',
+        action=DictAction,
+        help='override some settings in the used config, the key-value pair '
+        'in xxx=yyy format will be merged into config file. If the value to '
+        'be overwritten is a list, it should be like key="[a,b]" or key=a,b '
+        'It also allows nested list/tuple values, e.g. key="[(a,b),(c,d)]" '
+        'Note that the quotation marks are necessary and that no white space '
+        'is allowed.')
     parser.add_argument(
         '--eval-options',
         nargs='+',
@@ -179,6 +206,17 @@ def parse_args() -> argparse.Namespace:
     args = parser.parse_args()
     if 'LOCAL_RANK' not in os.environ:
         os.environ['LOCAL_RANK'] = str(args.local_rank)
+
+    if args.options and args.cfg_options:
+        raise ValueError(
+            '--options and --cfg-options cannot be both '
+            'specified, --options is deprecated in favor of --cfg-options. '
+            '--options will not be supported in version v0.22.0.')
+    if args.options:
+        warnings.warn('--options is deprecated in favor of --cfg-options. '
+                      '--options will not be supported in version v0.22.0.')
+        args.cfg_options = args.options
+
     return args
 
 
@@ -198,8 +236,8 @@ def main():
         raise ValueError('The output file must be a pkl file.')
 
     cfg = mmcv.Config.fromfile(args.config)
-    if args.options is not None:
-        cfg.merge_from_dict(args.options)
+    if args.cfg_options is not None:
+        cfg.merge_from_dict(args.cfg_options)
     cfg.model.pretrained = None
     cfg.data.test.test_mode = True
 
@@ -227,24 +265,61 @@ def main():
     model.CLASSES = dataset.CLASSES
     model.PALETTE = dataset.PALETTE
 
-    efficient_test = False
-    if args.eval_options is not None:
-        efficient_test = args.eval_options.get('efficient_test', False)
+    # clean gpu memory when starting a new evaluation.
+    torch.cuda.empty_cache()
+    eval_kwargs = {} if args.eval_options is None else args.eval_options
+
+    # Deprecated
+    efficient_test = eval_kwargs.get('efficient_test', False)
+    if efficient_test:
+        warnings.warn(
+            '``efficient_test=True`` does not have effect in tools/test.py, '
+            'the evaluation and format results are CPU memory efficient by '
+            'default')
+
+    eval_on_format_results = (
+        args.eval is not None and 'cityscapes' in args.eval)
+    if eval_on_format_results:
+        assert len(args.eval) == 1, 'eval on format results is not ' \
+                                    'applicable for metrics other than ' \
+                                    'cityscapes'
+    if args.format_only or eval_on_format_results:
+        if 'imgfile_prefix' in eval_kwargs:
+            tmpdir = eval_kwargs['imgfile_prefix']
+        else:
+            tmpdir = '.format_cityscapes'
+            eval_kwargs.setdefault('imgfile_prefix', tmpdir)
+        mmcv.mkdir_or_exist(tmpdir)
+    else:
+        tmpdir = None
 
     model = MMDataParallel(model, device_ids=[0])
-    outputs = single_gpu_test(model, data_loader, args.show, args.show_dir,
-                              efficient_test, args.opacity)
+    results = single_gpu_test(
+        model,
+        data_loader,
+        args.show,
+        args.show_dir,
+        False,
+        args.opacity,
+        pre_eval=args.eval is not None and not eval_on_format_results,
+        format_only=args.format_only or eval_on_format_results,
+        format_args=eval_kwargs)
 
     rank, _ = get_dist_info()
     if rank == 0:
         if args.out:
+            warnings.warn(
+                'The behavior of ``args.out`` has been changed since MMSeg '
+                'v0.16, the pickled outputs could be seg map as type of '
+                'np.array, pre-eval results or file paths for '
+                '``dataset.format_results()``.')
             print(f'\nwriting results to {args.out}')
-            mmcv.dump(outputs, args.out)
-        kwargs = {} if args.eval_options is None else args.eval_options
-        if args.format_only:
-            dataset.format_results(outputs, **kwargs)
+            mmcv.dump(results, args.out)
         if args.eval:
-            dataset.evaluate(outputs, args.eval, **kwargs)
+            dataset.evaluate(results, args.eval, **eval_kwargs)
+        if tmpdir is not None and eval_on_format_results:
+            # remove tmp dir when cityscapes evaluation
+            shutil.rmtree(tmpdir)
 
 
 if __name__ == '__main__':

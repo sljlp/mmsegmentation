@@ -1,3 +1,4 @@
+# Copyright (c) OpenMMLab. All rights reserved.
 import argparse
 
 import mmcv
@@ -112,7 +113,7 @@ def pytorch2libtorch(model,
 
     imgs = mm_inputs.pop('imgs')
 
-    # replace the orginal forword with forward_dummy
+    # replace the original forword with forward_dummy
     model.forward = model.forward_dummy
     model.eval()
     traced_model = torch.jit.trace(

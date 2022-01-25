@@ -1,3 +1,4 @@
+# Copyright (c) OpenMMLab. All rights reserved.
 from mmcv.cnn import ConvModule
 from torch import nn
 from torch.utils import checkpoint as cp
@@ -37,7 +38,8 @@ class InvertedResidual(nn.Module):
                  conv_cfg=None,
                  norm_cfg=dict(type='BN'),
                  act_cfg=dict(type='ReLU6'),
-                 with_cp=False):
+                 with_cp=False,
+                 **kwargs):
         super(InvertedResidual, self).__init__()
         self.stride = stride
         assert stride in [1, 2], f'stride must in [1, 2]. ' \
@@ -55,7 +57,8 @@ class InvertedResidual(nn.Module):
                     kernel_size=1,
                     conv_cfg=conv_cfg,
                     norm_cfg=norm_cfg,
-                    act_cfg=act_cfg))
+                    act_cfg=act_cfg,
+                    **kwargs))
         layers.extend([
             ConvModule(
                 in_channels=hidden_dim,
@@ -67,14 +70,16 @@ class InvertedResidual(nn.Module):
                 groups=hidden_dim,
                 conv_cfg=conv_cfg,
                 norm_cfg=norm_cfg,
-                act_cfg=act_cfg),
+                act_cfg=act_cfg,
+                **kwargs),
             ConvModule(
                 in_channels=hidden_dim,
                 out_channels=out_channels,
                 kernel_size=1,
                 conv_cfg=conv_cfg,
                 norm_cfg=norm_cfg,
-                act_cfg=None)
+                act_cfg=None,
+                **kwargs)
         ])
         self.conv = nn.Sequential(*layers)
 
